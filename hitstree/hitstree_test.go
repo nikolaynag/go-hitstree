@@ -58,7 +58,7 @@ func TestMerge(t *testing.T) {
 
 func TestMergeChildren(t *testing.T) {
 	ht := hitstree.NewHitsTree()
-	hitstree.MaxChildCnt = 3
+	hitstree.MaxChildrenCnt = 3
 	hitstree.Placeholder = "{}"
 	hitstree.Delimiter = "/"
 	ht.HitPath("/00/")

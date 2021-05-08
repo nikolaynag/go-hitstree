@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	// MaxChildCnt define maximum number of children before using template
-	MaxChildCnt = 100
+	// MaxChildrenCnt define maximum number of children before using template
+	MaxChildrenCnt = 100
 	// Placeholder is used as template path component
 	Placeholder = "{}"
 	// Delimiter is used to split path components in text representation
@@ -81,7 +81,7 @@ func (t *HitsTree) Hit(components []string) {
 			current = next
 			continue
 		}
-		if len(current.Children) >= MaxChildCnt {
+		if len(current.Children) >= MaxChildrenCnt {
 			next = current.MergeChildren()
 		} else {
 			next = &HitsTree{

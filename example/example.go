@@ -8,17 +8,25 @@ import (
 
 func main() {
 	ht := hitstree.NewHitsTree()
+	hitstree.MaxChildrenCnt = 10
 	ht.HitPath("/")
-	ht.HitPath("/a")
-	ht.HitPath("/b/foo")
-	ht.HitPath("/b/bar")
-	ht.HitPath("/b/baz")
-	for i := 0; i < 1000; i++ {
-		path := fmt.Sprintf("/a/%d/x", i)
-		ht.HitPath(path)
+	ht.HitPath("/users")
+	ht.HitPath("/content/foo")
+	ht.HitPath("/content/bar")
+	ht.HitPath("/content/baz")
+	for i := 0; i < 200; i++ {
+		if i%10 != 0 {
+			path := fmt.Sprintf("/users/%d/posts", i)
+			ht.HitPath(path)
+		} else {
+			for j := 0; j < 20; j++ {
+				path := fmt.Sprintf("/users/%d/posts/%d", i, j)
+				ht.HitPath(path)
+			}
+		}
 	}
-	ht.HitPath("/a/0000/y")
-	ht.HitPath("/a/1234")
-	ht.HitPath("/a/5678")
+	ht.HitPath("/users/0000/posts")
+	ht.HitPath("/users/1234")
+	ht.HitPath("/users/5678")
 	fmt.Println(ht)
 }
