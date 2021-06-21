@@ -26,10 +26,10 @@ func TestHitPath(t *testing.T) {
 	}
 	assert.Equal(t, expected, ht.HitsMap())
 	expectedString := strings.Join([]string{
-		"1\t/",
-		"2\t/1/2/3",
-		"100\t/1/2/3/4",
-		"1\t/test",
+		"1\t/\t",
+		"2\t/1/2/3\t",
+		"100\t/1/2/3/4\t",
+		"1\t/test\t",
 	}, "\n")
 	assert.Equal(t, expectedString, ht.String())
 }
@@ -39,21 +39,26 @@ func TestMerge(t *testing.T) {
 	a := hitstree.NewHitsTree()
 	b := hitstree.NewHitsTree()
 	a.HitPath("/a/1")
+	a.AddHitsToPath("/common", 1, map[string]bool{"tag1": true})
 	a.HitPath("/common")
-	a.HitPath("/common")
-	a.HitPath("/common/a")
+	a.AddHitsToPath("/common/a", 1, map[string]bool{"tag0": true})
 	b.HitPath("/b/1")
-	b.HitPath("/common")
+	b.AddHitsToPath("/common", 1, map[string]bool{"tag2": true})
 	b.HitPath("/common/b")
-	expected := map[string]int64{
+	expectedHitsMap := map[string]int64{
 		"/a/1":      1,
 		"/b/1":      1,
 		"/common":   3,
 		"/common/a": 1,
 		"/common/b": 1,
 	}
+	expectedTagsMap := map[string]map[string]bool{
+		"/common":   map[string]bool{"tag1": true, "tag2": true},
+		"/common/a": map[string]bool{"tag0": true},
+	}
 	a.Merge(b)
-	assert.Equal(t, expected, a.HitsMap())
+	assert.Equal(t, expectedHitsMap, a.HitsMap())
+	assert.Equal(t, expectedTagsMap, a.TagsMap())
 }
 
 func TestMergeChildren(t *testing.T) {
@@ -63,17 +68,21 @@ func TestMergeChildren(t *testing.T) {
 	hitstree.Delimiter = "/"
 	ht.HitPath("/00/")
 	ht.HitPath("/01/foo")
-	ht.HitPath("/02/bar")
+	ht.AddHitsToPath("/02/bar", 1, map[string]bool{"bar": true})
 	ht.HitPath("/03/bar")
 	ht.HitPath("/04/baz")
-	ht.HitPath("/05/bar")
+	ht.AddHitsToPath("/05/bar", 2, map[string]bool{"05": true})
 	ht.HitPath("/")
-	expected := map[string]int64{
+	expectedHits := map[string]int64{
 		"/":       1,
 		"/{}":     1,
 		"/{}/foo": 1,
-		"/{}/bar": 3,
+		"/{}/bar": 4,
 		"/{}/baz": 1,
 	}
-	assert.Equal(t, expected, ht.HitsMap())
+	expectedTags := map[string]map[string]bool{
+		"/{}/bar": map[string]bool{"bar": true, "05": true},
+	}
+	assert.Equal(t, expectedHits, ht.HitsMap())
+	assert.Equal(t, expectedTags, ht.TagsMap())
 }

@@ -23,6 +23,7 @@ var (
 // one template child with Placeholder as path component.
 type HitsTree struct {
 	Hits     int64
+	Tags     map[string]bool
 	Children map[string]*HitsTree
 }
 
@@ -30,7 +31,16 @@ type HitsTree struct {
 func NewHitsTree() *HitsTree {
 	return &HitsTree{
 		Hits:     0,
+		Tags:     map[string]bool{},
 		Children: map[string]*HitsTree{},
+	}
+}
+
+func mergeTags(dst, src map[string]bool) {
+	for k, v := range src {
+		if v {
+			dst[k] = true
+		}
 	}
 }
 
@@ -39,6 +49,7 @@ func (t *HitsTree) Merge(tm *HitsTree) {
 	left := t
 	right := tm
 	left.Hits += right.Hits
+	mergeTags(left.Tags, right.Tags)
 	for key, rightChild := range right.Children {
 		leftChild, ok := left.Children[key]
 		if ok {
@@ -69,6 +80,11 @@ func (t *HitsTree) MergeChildren() (mergedChild *HitsTree) {
 
 // Hit stores one hit to path represented by given set of components
 func (t *HitsTree) Hit(components []string) {
+	t.AddHits(components, 1, nil)
+}
+
+// AddHits appends given number of tagged hits to path represented by given set of components
+func (t *HitsTree) AddHits(components []string, numHits int64, tags map[string]bool) {
 	current := t
 	for _, component := range components {
 		next, ok := current.Children[Placeholder]
@@ -84,15 +100,13 @@ func (t *HitsTree) Hit(components []string) {
 		if len(current.Children) >= MaxChildrenCnt {
 			next = current.MergeChildren()
 		} else {
-			next = &HitsTree{
-				Hits:     0,
-				Children: map[string]*HitsTree{},
-			}
+			next = NewHitsTree()
 			current.Children[component] = next
 		}
 		current = next
 	}
-	current.Hits++
+	current.Hits += numHits
+	mergeTags(current.Tags, tags)
 }
 
 // HitPath adds one hit to path represented by string p
@@ -107,31 +121,59 @@ func (t *HitsTree) HitPath(p string) {
 	t.Hit(pathComponents)
 }
 
+// AddHitsToPath adds one hit to path represented by string p
+func (t *HitsTree) AddHitsToPath(p string, numHits int64, tags map[string]bool) {
+	trimmedPath := strings.Trim(path.Clean(p), Delimiter)
+	var pathComponents []string
+	if trimmedPath != "" {
+		pathComponents = strings.Split(trimmedPath, Delimiter)
+	} else {
+		pathComponents = []string{}
+	}
+	t.AddHits(pathComponents, numHits, tags)
+}
+
 // outputToMap updates hitsByPath map by adding number of hits for each
 // path
-func (t *HitsTree) outputToMap(parentPath string, hitsByPath map[string]int64) {
-	if t.Hits > 0 {
-		currPath := strings.TrimRight(parentPath, Delimiter)
-		if currPath == "" {
-			currPath = Delimiter
-		}
+func (t *HitsTree) outputToMaps(parentPath string, hitsByPath map[string]int64, tagsByPath map[string]map[string]bool) {
+	currPath := strings.TrimRight(parentPath, Delimiter)
+	if currPath == "" {
+		currPath = Delimiter
+	}
+	if t.Hits > 0 && hitsByPath != nil {
 		hitsByPath[currPath] += t.Hits
 	}
+	if t.Tags != nil && tagsByPath != nil && len(t.Tags) > 0 {
+		tags := tagsByPath[currPath]
+		if tags == nil {
+			tags = make(map[string]bool)
+			tagsByPath[currPath] = tags
+		}
+		mergeTags(tags, t.Tags)
+	}
 	for key, child := range t.Children {
-		child.outputToMap(path.Join(parentPath, key), hitsByPath)
+		child.outputToMaps(path.Join(parentPath, key), hitsByPath, tagsByPath)
 	}
 }
 
 // HitsMap return map where path is key and hits count is value
 func (t *HitsTree) HitsMap() (hitsMap map[string]int64) {
 	hitsMap = make(map[string]int64)
-	t.outputToMap(Delimiter, hitsMap)
+	t.outputToMaps(Delimiter, hitsMap, nil)
+	return
+}
+
+// TagsMap return map where path is key and combined tags set is value
+func (t *HitsTree) TagsMap() (tagsMap map[string]map[string]bool) {
+	tagsMap = make(map[string]map[string]bool)
+	t.outputToMaps(Delimiter, nil, tagsMap)
 	return
 }
 
 // String returns string representation of t
 func (t *HitsTree) String() (result string) {
 	hitsByPath := t.HitsMap()
+	tagsByPath := t.TagsMap()
 	pathList := []string{}
 	for p := range hitsByPath {
 		pathList = append(pathList, p)
@@ -139,7 +181,11 @@ func (t *HitsTree) String() (result string) {
 	sort.Strings(pathList)
 	lines := make([]string, len(pathList))
 	for i, p := range pathList {
-		lines[i] = fmt.Sprintf("%d\t%s", hitsByPath[p], p)
+		tags := make([]string, 0, len(tagsByPath[p]))
+		for tag := range tagsByPath[p] {
+			tags = append(tags, tag)
+		}
+		lines[i] = fmt.Sprintf("%d\t%s\t%s", hitsByPath[p], p, strings.Join(tags, ", "))
 	}
 	return strings.Join(lines, "\n")
 }

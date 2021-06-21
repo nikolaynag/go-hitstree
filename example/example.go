@@ -13,7 +13,9 @@ func main() {
 	ht.HitPath("/users")
 	ht.HitPath("/content/foo")
 	ht.HitPath("/content/bar")
+	ht.AddHitsToPath("/content/baz", 10, map[string]bool{"tag1": true})
 	ht.HitPath("/content/baz")
+	ht.AddHitsToPath("/content/baz", 1, map[string]bool{"tag2": true})
 	for i := 0; i < 200; i++ {
 		if i%10 != 0 {
 			path := fmt.Sprintf("/users/%d/posts", i)
