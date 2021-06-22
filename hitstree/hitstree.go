@@ -31,8 +31,8 @@ type HitsTree struct {
 func NewHitsTree() *HitsTree {
 	return &HitsTree{
 		Hits:     0,
-		Tags:     map[string]bool{},
-		Children: map[string]*HitsTree{},
+		Tags:     make(map[string]bool),
+		Children: make(map[string]*HitsTree),
 	}
 }
 
@@ -115,8 +115,6 @@ func (t *HitsTree) HitPath(p string) {
 	var pathComponents []string
 	if trimmedPath != "" {
 		pathComponents = strings.Split(trimmedPath, Delimiter)
-	} else {
-		pathComponents = []string{}
 	}
 	t.Hit(pathComponents)
 }
@@ -127,8 +125,6 @@ func (t *HitsTree) AddHitsToPath(p string, numHits int64, tags map[string]bool) 
 	var pathComponents []string
 	if trimmedPath != "" {
 		pathComponents = strings.Split(trimmedPath, Delimiter)
-	} else {
-		pathComponents = []string{}
 	}
 	t.AddHits(pathComponents, numHits, tags)
 }
@@ -174,7 +170,7 @@ func (t *HitsTree) TagsMap() (tagsMap map[string]map[string]bool) {
 func (t *HitsTree) String() (result string) {
 	hitsByPath := t.HitsMap()
 	tagsByPath := t.TagsMap()
-	pathList := []string{}
+	var pathList []string
 	for p := range hitsByPath {
 		pathList = append(pathList, p)
 	}
