@@ -117,10 +117,12 @@ func TestAddPlaceholder(t *testing.T) {
 	ht.HitPath("/0/1")
 	ht.HitPath("/0/2")
 	ht.HitPath("/0/{}/3")
+	ht.HitPath("/1/{}")
 	expected := map[string]int64{
 		"/0":      1,
 		"/0/{}":   2,
 		"/0/{}/3": 1,
+		"/1/{}":   1,
 	}
 	assert.Equal(t, expected, ht.HitsMap())
 }

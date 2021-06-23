@@ -98,7 +98,7 @@ func (t *HitsTree) AddHits(components []string, numHits int64, tags map[string]b
 			current = next
 			continue
 		}
-		if component == Placeholder {
+		if len(current.Children) > 0 && component == Placeholder {
 			current = current.MergeChildren()
 			continue
 		}
@@ -186,6 +186,7 @@ func (t *HitsTree) String() (result string) {
 		for tag := range tagsByPath[p] {
 			tags = append(tags, tag)
 		}
+		sort.Strings(tags)
 		lines[i] = fmt.Sprintf("%d\t%s\t%s", hitsByPath[p], p, strings.Join(tags, ", "))
 	}
 	return strings.Join(lines, "\n")
