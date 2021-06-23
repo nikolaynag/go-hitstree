@@ -86,3 +86,20 @@ func TestMergeChildren(t *testing.T) {
 	assert.Equal(t, expectedHits, ht.HitsMap())
 	assert.Equal(t, expectedTags, ht.TagsMap())
 }
+
+func TestZeroMaxChildren(t *testing.T) {
+	ht := hitstree.NewHitsTree()
+	hitstree.MaxChildrenCnt = 0
+	hitstree.Placeholder = "{}"
+	hitstree.Delimiter = "/"
+	ht.HitPath("/0")
+	ht.HitPath("/0/1")
+	ht.HitPath("/0/1")
+	ht.HitPath("/0/2")
+	expected := map[string]int64{
+		"/0":   1,
+		"/0/1": 2,
+		"/0/2": 1,
+	}
+	assert.Equal(t, expected, ht.HitsMap())
+}

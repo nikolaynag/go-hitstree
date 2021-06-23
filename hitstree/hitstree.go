@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	// MaxChildrenCnt define maximum number of children before using template
+	// MaxChildrenCnt define maximum number of children before using
+	// template, zero means no limit
 	MaxChildrenCnt = 100
 	// Placeholder is used as template path component
 	Placeholder = "{}"
@@ -97,7 +98,7 @@ func (t *HitsTree) AddHits(components []string, numHits int64, tags map[string]b
 			current = next
 			continue
 		}
-		if len(current.Children) >= MaxChildrenCnt {
+		if MaxChildrenCnt > 0 && len(current.Children) >= MaxChildrenCnt {
 			next = current.MergeChildren()
 		} else {
 			next = NewHitsTree()
