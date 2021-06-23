@@ -17,18 +17,22 @@ func TestHitPath(t *testing.T) {
 		ht.HitPath("/1/2/3/4")
 	}
 	ht.HitPath("/1/2/3")
+	ht.AddHitsToPath("/tags", 10, map[string]bool{"tag1": true})
+	ht.AddHitsToPath("/tags", 10, map[string]bool{"tag2": true})
 	ht.HitPath("/test/")
 	expected := map[string]int64{
 		"/":        1,
 		"/1/2/3":   2,
 		"/1/2/3/4": 100,
 		"/test":    1,
+		"/tags":    20,
 	}
 	assert.Equal(t, expected, ht.HitsMap())
 	expectedString := strings.Join([]string{
 		"1\t/\t",
 		"2\t/1/2/3\t",
 		"100\t/1/2/3/4\t",
+		"20\t/tags\ttag1, tag2",
 		"1\t/test\t",
 	}, "\n")
 	assert.Equal(t, expectedString, ht.String())
@@ -100,6 +104,23 @@ func TestZeroMaxChildren(t *testing.T) {
 		"/0":   1,
 		"/0/1": 2,
 		"/0/2": 1,
+	}
+	assert.Equal(t, expected, ht.HitsMap())
+}
+
+func TestAddPlaceholder(t *testing.T) {
+	ht := hitstree.NewHitsTree()
+	hitstree.MaxChildrenCnt = 0
+	hitstree.Placeholder = "{}"
+	hitstree.Delimiter = "/"
+	ht.HitPath("/0")
+	ht.HitPath("/0/1")
+	ht.HitPath("/0/2")
+	ht.HitPath("/0/{}/3")
+	expected := map[string]int64{
+		"/0":      1,
+		"/0/{}":   2,
+		"/0/{}/3": 1,
 	}
 	assert.Equal(t, expected, ht.HitsMap())
 }

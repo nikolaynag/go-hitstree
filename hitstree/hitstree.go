@@ -98,12 +98,16 @@ func (t *HitsTree) AddHits(components []string, numHits int64, tags map[string]b
 			current = next
 			continue
 		}
-		if MaxChildrenCnt > 0 && len(current.Children) >= MaxChildrenCnt {
-			next = current.MergeChildren()
-		} else {
-			next = NewHitsTree()
-			current.Children[component] = next
+		if component == Placeholder {
+			current = current.MergeChildren()
+			continue
 		}
+		if MaxChildrenCnt > 0 && len(current.Children) >= MaxChildrenCnt {
+			current = current.MergeChildren()
+			continue
+		}
+		next = NewHitsTree()
+		current.Children[component] = next
 		current = next
 	}
 	current.Hits += numHits
